@@ -66,6 +66,14 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - name: build front end
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+      run:
+        - npm ci
+        - npm build
+
     # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v1
