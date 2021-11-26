@@ -69,8 +69,10 @@ jobs:
         node-version: '14'
     - name: Install front end deps
       run: npm ci
+      working-directory: ./frontend
     - name: Build front end
       run: npm build
+      working-directory: ./frontend
 
     # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
     - name: Setup Terraform
