@@ -52,7 +52,7 @@ on:
       - main
     paths:
       - opt/**/*.tf
-      - .github/workflows/provision.yml
+      - ./.github/workflows/provision.yml
 
 jobs:
   terraform:
