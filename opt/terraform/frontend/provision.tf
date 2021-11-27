@@ -112,3 +112,4 @@ resource "aws_cloudfront_distribution" "cloud-front" {
     cloudfront_default_certificate = true
   }
 }
+
