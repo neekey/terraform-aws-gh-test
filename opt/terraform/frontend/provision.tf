@@ -8,14 +8,14 @@ terraform {
 
   required_version = ">=1.0.11"
   backend "s3" {
-    bucket = "terraform-test-state"
+    bucket = "terraform-test-state-neekey"
     key    = "test-terraform-frontend"
-    region = "east-us-1"
+    region = "us-east-1"
   }
 }
 
 provider "aws" {
-  region  = "east-us-1"
+  region  = "us-east-1"
 }
 
 resource "aws_s3_bucket" "s3" {
