@@ -45,6 +45,9 @@
 name: 'Provision'
 
 on:
+  push:
+    branches:
+      - provision/*
   pull_request:
     types: [closed]
     branches:
@@ -56,7 +59,6 @@ jobs:
     name: 'Provision'
     runs-on: ubuntu-latest
     environment: prod
-    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'provision/')
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -64,8 +66,6 @@ jobs:
         shell: bash
 
     steps:
-    - name: get pull reqeust branch name
-      run: echo ${{ github.event.pull_request.head.ref }}
     # Checkout the repository to the GitHub Actions runner
     - uses: actions/checkout@v2
     - name: "Configure AWS Credentials"
@@ -111,4 +111,5 @@ jobs:
       # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
     - name: Terraform Apply
       run: terraform apply -auto-approve
+      if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'provision/')
       working-directory: ./opt/terraform/frontend
