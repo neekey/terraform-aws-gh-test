@@ -66,6 +66,8 @@ jobs:
         shell: bash
 
     steps:
+    - name: get pull reqeust branch name
+      run: echo ${github.event.pull_request.head.ref}
     # Checkout the repository to the GitHub Actions runner
     - uses: actions/checkout@v2
 
