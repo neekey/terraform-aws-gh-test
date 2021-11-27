@@ -1,3 +1,24 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      Version = "~>3.67"
+    }
+  }
+
+  required_version = ">=1.0.11"
+  backend "s3" {
+    bucket = "terraform-test-state"
+    key    = "test-terraform-frontend"
+    region = "east-us-1"
+  }
+}
+
+provider "aws" {
+  version = "~>3.0"
+  region  = "east-us-1"
+}
+
 resource "aws_s3_bucket" "s3" {
   bucket = "test-s3-bucket-for-terraform-frontend"
   acl    = "private"
