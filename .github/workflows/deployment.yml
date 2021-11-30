@@ -9,7 +9,7 @@ on:
     types: [closed]
     branches:
       - main
-envs:
+env:
   FRONT_END_S3_BUCKET: test-s3-bucket-for-terraform-frontend
 
 jobs:
@@ -30,11 +30,11 @@ jobs:
       working-directory: ./frontend
     - name: Archive Front End Build Artifacts
       uses: actions/upload-artifact@v2
-      working-directory: ./frontend
       with:
         name: dist
+        if-no-files-found: true
         path: |
-          dist
+          frontend/dist
   deploy_to_testing:
     name: ' Testing Deployment'
     runs-on: ubuntu-latest
