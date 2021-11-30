@@ -1,22 +1,21 @@
 terraform {
   required_providers {
     aws = {
-      source = "hashicorp/aws"
-      Version = "~>3.67"
+      source  = "hashicorp/aws"
+      version = "~>3.67"
     }
   }
 
   required_version = ">=1.0.11"
   backend "s3" {
-    bucket = "terraform-test-state"
+    bucket = "terraform-test-state-neekey"
     key    = "test-terraform-frontend"
-    region = "east-us-1"
+    region = "us-east-1"
   }
 }
 
 provider "aws" {
-  version = "~>3.0"
-  region  = "east-us-1"
+  region = "us-east-1"
 }
 
 resource "aws_s3_bucket" "s3" {
