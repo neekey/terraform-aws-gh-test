@@ -29,5 +29,5 @@ jobs:
       run: npm ci
       working-directory: ./frontend
     - name: Build front end
-      run: npm build
+      run: npm run build
       working-directory: ./frontend
