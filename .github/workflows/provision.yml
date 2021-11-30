@@ -50,15 +50,13 @@ on:
     branches:
       - testing
       - main
-    paths:
-      - opt/**/*.tf
 
 jobs:
   terraform:
     name: 'Provision'
     runs-on: ubuntu-latest
-    environment: production
-    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'refs/heads/provision/')
+    environment: prod
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'provision/')
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -66,8 +64,18 @@ jobs:
         shell: bash
 
     steps:
+    - name: get pull reqeust branch name
+      run: echo ${{ github.event.pull_request.head.ref }}
     # Checkout the repository to the GitHub Actions runner
     - uses: actions/checkout@v2
+    - name: "Configure AWS Credentials"
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        # AWS Access Key ID. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        # AWS Secret Access Key. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: 'us-east-1'
 
     # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
     - name: Setup Terraform
@@ -88,12 +96,19 @@ jobs:
 
     # Generates an execution plan for Terraform
     - name: Terraform Plan
+      id: terraformPlan
       run: terraform plan
+      continue-on-error: true
       working-directory: ./opt/terraform/frontend
+      env:
+        AWS_REGION: us-east-1
+
+    - name: Terraform Plan Status
+      if: steps.terraformPlan.outcome == 'failure'
+      run: exit 1
 
       # On push to main, build or change infrastructure according to Terraform configuration files
       # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
     - name: Terraform Apply
-      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       run: terraform apply -auto-approve
       working-directory: ./opt/terraform/frontend
