@@ -1,4 +1,4 @@
-name: 'Deployment'
+name: 'Application'
 
 on:
   pull_request:
@@ -11,6 +11,7 @@ env:
 jobs:
   testing:
     name: 'Lint & Test & Build'
+    if: startsWith(github.event.pull_request.head.ref, 'feature/')
     runs-on: ubuntu-latest
     steps:
     - name: Cancel Previous Runs
@@ -36,7 +37,7 @@ jobs:
           frontend/dist
   deploy_to_testing:
     name: 'Testing Env Deployment'
-    if: github.event.pull_request.merged != true
+    if: github.event.pull_request.merged != true && startsWith(github.event.pull_request.head.ref, 'feature/')
     runs-on: ubuntu-latest
     environment: testing
     needs: [testing]
@@ -72,7 +73,7 @@ jobs:
         aws s3api put-object --bucket ${{env.FRONT_END_S3_BUCKET}} --key index.html --cache-control "public, must-revalidate, proxy-revalidate, max-age=0" --content-type text/html --body dist/index.html
   deploy_to_staging:
     name: 'Staging Env Deployment'
-    if: github.event.pull_request.merged != true
+    if: github.event.pull_request.merged != true && startsWith(github.event.pull_request.head.ref, 'feature/')
     runs-on: ubuntu-latest
     environment: staging
     needs: [testing, deploy_to_testing]
@@ -108,7 +109,7 @@ jobs:
         aws s3api put-object --bucket ${{env.FRONT_END_S3_BUCKET}} --key index.html --cache-control "public, must-revalidate, proxy-revalidate, max-age=0" --content-type text/html --body dist/index.html
   deploy_to_Prod:
     name: 'Prod Env Deployment'
-    if: github.event.pull_request.merged == true
+    if: github.event.pull_request.merged != true && startsWith(github.event.pull_request.head.ref, 'feature/')
     runs-on: ubuntu-latest
     environment: prod
     needs: [testing]

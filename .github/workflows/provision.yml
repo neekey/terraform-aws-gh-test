@@ -7,7 +7,7 @@ on:
   pull_request:
     types: [closed]
     branches:
-      - testing
+      - testing/provision
       - main
 
 jobs:
