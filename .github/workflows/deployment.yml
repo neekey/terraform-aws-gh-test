@@ -1,24 +1,16 @@
 name: 'Deployment'
 
 on:
-  push:
-    branches:
-    - main
   pull_request:
     branches:
-    - main
+      - main
+env:
+  FRONT_END_S3_BUCKET: test-s3-bucket-for-terraform-frontend
 
 jobs:
-  deployment:
-    name: 'Deployment'
+  testing:
+    name: 'Lint & Test & Build'
     runs-on: ubuntu-latest
-    environment: production
-
-    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
-    defaults:
-      run:
-        shell: bash
-
     steps:
     # Checkout the repository to the GitHub Actions runner
     - uses: actions/checkout@v2
@@ -28,6 +20,121 @@ jobs:
     - name: Install front end deps
       run: npm ci
       working-directory: ./frontend
-    - name: Build front end
+    - name: Build Front End
       run: npm run build
       working-directory: ./frontend
+    - name: Archive Front End Build Artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: dist
+        if-no-files-found: error
+        path: |
+          frontend/dist
+  deploy_to_testing:
+    name: ' Testing Env Deployment'
+    if: github.event.pull_request.merged != true
+    runs-on: ubuntu-latest
+    environment: testing
+    needs: [testing]
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - uses: actions/checkout@v2
+    - name: Download a single artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: dist
+        path: ./frontend/dist
+    - name: Check Build Artifact Before Deploy
+      working-directory: ./frontend
+      run: ls -al dist
+    - name: "Configure AWS Credentials"
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        # AWS Access Key ID. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        # AWS Secret Access Key. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: 'us-east-1'
+    - name: "upload to S3"
+      working-directory: ./frontend
+      run: |
+        aws s3 sync dist s3://${{env.FRONT_END_S3_BUCKET}} --cache-control "public, max-age=31536000"
+        aws s3api put-object --bucket ${{env.FRONT_END_S3_BUCKET}} --key index.html --cache-control "public, must-revalidate, proxy-revalidate, max-age=0" --content-type text/html --body dist/index.html
+  deploy_to_staging:
+    name: ' Staging Env Deployment'
+    if: github.event.pull_request.merged != true
+    runs-on: ubuntu-latest
+    environment: staging
+    needs: [testing, deploy_to_testing]
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - uses: actions/checkout@v2
+    - name: Download a single artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: dist
+        path: ./frontend/dist
+    - name: Check Build Artifact Before Deploy
+      working-directory: ./frontend
+      run: ls -al dist
+    - name: "Configure AWS Credentials"
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        # AWS Access Key ID. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        # AWS Secret Access Key. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: 'us-east-1'
+    - name: "upload to S3"
+      working-directory: ./frontend
+      run: |
+        aws s3 sync dist s3://${{env.FRONT_END_S3_BUCKET}} --cache-control "public, max-age=31536000"
+        aws s3api put-object --bucket ${{env.FRONT_END_S3_BUCKET}} --key index.html --cache-control "public, must-revalidate, proxy-revalidate, max-age=0" --content-type text/html --body dist/index.html
+  deploy_to_Prod:
+    name: 'Prod Env Deployment'
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    environment: prod
+    needs: [testing]
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - uses: actions/checkout@v2
+    - name: Download a single artifact
+      uses: actions/download-artifact@v2
+      with:
+        name: dist
+        path: ./frontend/dist
+    - name: Check Build Artifact Before Deploy
+      working-directory: ./frontend
+      run: ls -al dist
+    - name: "Configure AWS Credentials"
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        # AWS Access Key ID. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        # AWS Secret Access Key. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: 'us-east-1'
+    - name: "upload to S3"
+      working-directory: ./frontend
+      run: |
+        aws s3 sync dist s3://${{env.FRONT_END_S3_BUCKET}} --cache-control "public, max-age=31536000"
+        aws s3api put-object --bucket ${{env.FRONT_END_S3_BUCKET}} --key index.html --cache-control "public, must-revalidate, proxy-revalidate, max-age=0" --content-type text/html --body dist/index.html
