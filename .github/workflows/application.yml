@@ -101,7 +101,7 @@ jobs:
   deploy_to_Prod:
     name: 'Prod Env Deployment'
     # only trigger this if the PR is merged.
-    if: github.event.pull_request.merged != true
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     environment: prod
     needs: [testing]
