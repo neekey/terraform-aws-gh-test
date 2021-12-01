@@ -1,7 +1,8 @@
-name: 'Deployment'
+name: 'Application'
 
 on:
   pull_request:
+    types: ['opened', 'synchronize', 'reopened', 'closed']
     branches:
       - main
 env:
@@ -10,9 +11,14 @@ env:
 jobs:
   testing:
     name: 'Lint & Test & Build'
+    # restrict only feature/* and bugfix/* will trigger application deployment
+    if: startsWith(github.event.pull_request.head.ref, 'feature/') || startsWith(github.event.pull_request.head.ref, 'bugfix/')
     runs-on: ubuntu-latest
     steps:
-    # Checkout the repository to the GitHub Actions runner
+    - name: Cancel Previous Runs
+      uses: styfle/cancel-workflow-action@0.9.1
+      with:
+        access_token: ${{ github.token }}
     - uses: actions/checkout@v2
     - uses: actions/setup-node@v2
       with:
@@ -31,19 +37,16 @@ jobs:
         path: |
           frontend/dist
   deploy_to_testing:
-    name: ' Testing Env Deployment'
+    name: 'Testing Env Deployment'
     if: github.event.pull_request.merged != true
     runs-on: ubuntu-latest
     environment: testing
     needs: [testing]
-
-    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
 
     steps:
-    # Checkout the repository to the GitHub Actions runner
     - uses: actions/checkout@v2
     - name: Download a single artifact
       uses: actions/download-artifact@v2
@@ -56,9 +59,7 @@ jobs:
     - name: "Configure AWS Credentials"
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        # AWS Access Key ID. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        # AWS Secret Access Key. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: 'us-east-1'
     - name: "upload to S3"
@@ -67,19 +68,16 @@ jobs:
         aws s3 sync dist s3://${{env.FRONT_END_S3_BUCKET}} --cache-control "public, max-age=31536000"
         aws s3api put-object --bucket ${{env.FRONT_END_S3_BUCKET}} --key index.html --cache-control "public, must-revalidate, proxy-revalidate, max-age=0" --content-type text/html --body dist/index.html
   deploy_to_staging:
-    name: ' Staging Env Deployment'
+    name: 'Staging Env Deployment'
     if: github.event.pull_request.merged != true
     runs-on: ubuntu-latest
     environment: staging
     needs: [testing, deploy_to_testing]
-
-    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
 
     steps:
-    # Checkout the repository to the GitHub Actions runner
     - uses: actions/checkout@v2
     - name: Download a single artifact
       uses: actions/download-artifact@v2
@@ -92,9 +90,7 @@ jobs:
     - name: "Configure AWS Credentials"
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        # AWS Access Key ID. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        # AWS Secret Access Key. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: 'us-east-1'
     - name: "upload to S3"
@@ -104,18 +100,16 @@ jobs:
         aws s3api put-object --bucket ${{env.FRONT_END_S3_BUCKET}} --key index.html --cache-control "public, must-revalidate, proxy-revalidate, max-age=0" --content-type text/html --body dist/index.html
   deploy_to_Prod:
     name: 'Prod Env Deployment'
-    if: github.event.pull_request.merged == true
+    # only trigger this if the PR is merged.
+    if: github.event.pull_request.merged != true
     runs-on: ubuntu-latest
     environment: prod
     needs: [testing]
-
-    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
       run:
         shell: bash
 
     steps:
-    # Checkout the repository to the GitHub Actions runner
     - uses: actions/checkout@v2
     - name: Download a single artifact
       uses: actions/download-artifact@v2
@@ -128,9 +122,7 @@ jobs:
     - name: "Configure AWS Credentials"
       uses: aws-actions/configure-aws-credentials@v1
       with:
-        # AWS Access Key ID. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        # AWS Secret Access Key. This input is required if running in the GitHub hosted environment. It is optional if running in a self-hosted environment that already has AWS credentials, for example on an EC2 instance.
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: 'us-east-1'
     - name: "upload to S3"

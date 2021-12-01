@@ -1,20 +1,17 @@
-name: 'Provision'
+name: 'Provision Testing'
 
 on:
-  push:
-    branches:
-      - provision/*
   pull_request:
     types: [closed]
     branches:
-      - testing
-      - main
+      - testing/provision
+    paths: ['opt/terraform/*']
 
 jobs:
-  terraform:
-    name: 'Provision'
+  deployment:
+    name: 'Provision Testing Environment'
     runs-on: ubuntu-latest
-    environment: prod
+    environment: testing
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
