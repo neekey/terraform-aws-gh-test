@@ -35,7 +35,7 @@ jobs:
         path: |
           frontend/dist
   deploy_to_testing:
-    name: ' Testing Env Deployment'
+    name: 'Testing Env Deployment'
     if: github.event.pull_request.merged != true
     runs-on: ubuntu-latest
     environment: testing
@@ -111,7 +111,7 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     environment: prod
-    needs: [testing, deploy_to_testing, deploy_to_staging]
+    needs: [testing]
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
