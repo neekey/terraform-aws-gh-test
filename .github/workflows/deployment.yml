@@ -50,9 +50,9 @@ jobs:
     - uses: actions/checkout@v2
     - name: Download a single artifact
       uses: actions/download-artifact@v2
-      working-directory: ./frontend
       with:
         name: dist
+        path: ./frontend/dist
     - name: Check Build Artifact Before Deploy
       working-directory: ./frontend
       run: ls -al dist
