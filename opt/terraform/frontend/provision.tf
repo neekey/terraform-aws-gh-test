@@ -24,6 +24,7 @@ resource "aws_s3_bucket" "s3" {
   tags = {
     Test        = "true"
     Environment = "test"
+    Author      = "NEEKEY"
   }
 }
 
